@@ -1,6 +1,6 @@
 
 locals {
-  name1  = substr(lower(replace(azurerm_resource_group.this.name, "/[^0-9a-zA-Z]/", "")), 0, 24)
+  name1  = substr(lower(replace(azurerm_resource_group.this.name, "/[^0-9a-zA-Z]/", "")), 0, 22)
   saname = format("sa%s%s", replace(local.name1, "/^rg/", ""), random_string.project.result)
 
 }
@@ -13,15 +13,20 @@ resource "random_string" "project" {
 }
 
 resource "azurerm_resource_group" "this" {
-  name     = "poc-servicenow-case1-rg"
+  name     = "poc-servicenow-case1-${random_string.project.result}-rg"
   location = "westeurope"
+  tags = {
+    CostCenter  = var.costcenter
+    ProjectName = var.projectname
+  }
 }
 
 
 ## Create 3 storage accounts
 
 resource "azurerm_storage_account" "this" {
-  name                = local.saname
+  count               = 3
+  name                = "${local.saname}[count.index]"
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location
 
@@ -29,36 +34,9 @@ resource "azurerm_storage_account" "this" {
   account_replication_type = "LRS"
 
   tags = {
-    CostCenter  = var.costcenter
-    ProjectName = var.projectname
+    CostCenter      = var.costcenter
+    ProjectName     = var.projectname
+    deploymentindex = [count.index]
   }
 
-}
-
-resource "azurerm_container_group" "aci-example" {
-  name                = "poc-${randdom_string.ptoject.result}${var.prefix}-examplecont"
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  ip_address_type     = "public"
-  dns_name_label      = "${var.prefix}-examplecont"
-  os_type             = "linux"
-
-  container {
-    name   = "hw"
-    image  = "microsoft/aci-helloworld:latest"
-    cpu    = "0.5"
-    memory = "1.5"
-    port   = "80"
-  }
-
-  container {
-    name   = "sidecar"
-    image  = "microsoft/aci-tutorial-sidecar"
-    cpu    = "0.5"
-    memory = "1.5"
-  }
-
-  tags = {
-    environment = "testing"
-  }
 }
