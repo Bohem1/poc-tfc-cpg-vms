@@ -36,7 +36,7 @@ resource "azurerm_storage_account" "this" {
   tags = {
     CostCenter      = var.costcenter
     ProjectName     = var.projectname
-    deploymentindex = [count.index]
+    deploymentindex = "item-$[count.index]"
   }
 
 }
