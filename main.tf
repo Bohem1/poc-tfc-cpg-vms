@@ -4,7 +4,6 @@ locals {
 
 }
 
-
 resource "random_string" "this" {
   length  = 5
   lower   = true
